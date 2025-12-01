@@ -81,3 +81,91 @@
     font-size: 1.4rem;
   }
 }
+/* === Список криптовалют === */
+
+.crypto-list {
+  margin-top: 1.5rem;
+}
+
+.crypto-list-header h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.crypto-list-header p {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.crypto-table-wrapper {
+  overflow-x: auto;
+}
+
+.crypto-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.crypto-table thead {
+  background-color: #020617;
+}
+
+.crypto-table th,
+.crypto-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #1f2937;
+}
+
+.crypto-table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.crypto-table tbody tr:hover {
+  background-color: #030712;
+}
+
+.crypto-name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.crypto-name-main {
+  font-weight: 500;
+}
+
+.crypto-symbol {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid #374151;
+  color: #9ca3af;
+}
+
+.crypto-change {
+  font-weight: 500;
+}
+
+.crypto-change-positive {
+  color: #22c55e;
+}
+
+.crypto-change-negative {
+  color: #ef4444;
+}
+
+/* Для вузьких екранів */
+@media (max-width: 600px) {
+  .crypto-table th:nth-child(5),
+  .crypto-table td:nth-child(5) {
+    display: none; /* ховаємо ринкову капіталізацію на телефонах */
+  }
+}

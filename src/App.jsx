@@ -1,6 +1,7 @@
 import './App.css';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import CryptoList from './components/CryptoList';
 
 function App() {
   return (
@@ -12,13 +13,16 @@ function App() {
           <section className="app-section">
             <h2>Головний екран</h2>
             <p>
-              Тут пізніше буде відображатися список криптовалют, їхній поточний курс
-              та графіки зміни ціни.
+              На цій сторінці відображається перелік основних криптовалют
+              та їхні базові ринкові показники. Поки що використовуються
+              демонстраційні (статичні) дані.
             </p>
             <p>
-              Зараз це тільки стартовий шаблон, на основі якого ми крок за кроком
-              побудуємо повноцінний трекер.
+              На наступних етапах ми підʼєднаємо CoinGecko API, додамо пошук,
+              фільтрацію та графіки зміни ціни.
             </p>
+
+            <CryptoList />
           </section>
         </div>
       </main>
