@@ -234,3 +234,43 @@
     align-items: stretch;
   }
 }
+/* Виділення активного рядка в таблиці */
+
+.crypto-table tbody tr.crypto-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.crypto-table tbody tr.crypto-row:hover {
+  background-color: #030712;
+}
+
+.crypto-table tbody tr.crypto-row-selected {
+  background-color: #020617;
+  box-shadow: inset 0 0 0 1px #3b82f6;
+}
+
+/* Графік криптовалюти */
+
+.crypto-chart {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #1f2937;
+}
+
+.crypto-chart h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+}
+
+.crypto-chart-inner {
+  position: relative;
+  width: 100%;
+  height: 260px;
+}
+
+@media (max-width: 600px) {
+  .crypto-chart-inner {
+    height: 220px;
+  }
+}

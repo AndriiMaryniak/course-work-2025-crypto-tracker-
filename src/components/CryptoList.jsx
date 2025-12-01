@@ -50,7 +50,6 @@ function formatCurrency(value, vsCurrency) {
     return '-';
   }
 
-  // Налаштування форматування для різних валют
   if (vsCurrency === 'uah') {
     return value.toLocaleString('uk-UA', {
       style: 'currency',
@@ -59,7 +58,6 @@ function formatCurrency(value, vsCurrency) {
     });
   }
 
-  // За замовчуванням — долар США
   return value.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -76,7 +74,7 @@ function formatPercent(value) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-function CryptoList() {
+function CryptoList({ onCoinSelect, selectedCoinId }) {
   const [coins, setCoins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -94,24 +92,41 @@ function CryptoList() {
 
         const data = await fetchMarketCoins(vsCurrency, 10);
         setCoins(data);
+
+        // Якщо монета ще не обрана — автоматично обираємо першу
+        if (data.length > 0 && !selectedCoinId && onCoinSelect) {
+          const first = data[0];
+          onCoinSelect({
+            id: first.id,
+            name: first.name,
+            symbol: first.symbol,
+          });
+        }
       } catch (err) {
         console.error(err);
 
-        // Якщо API недоступне — показуємо демо-дані в USD
         setError(
           'Не вдалося завантажити дані з CoinGecko для вибраної валюти. Показано демонстраційні дані в USD.'
         );
         setCoins(FALLBACK_COINS);
         setUsingFallback(true);
+
+        if (!selectedCoinId && onCoinSelect && FALLBACK_COINS.length > 0) {
+          const first = FALLBACK_COINS[0];
+          onCoinSelect({
+            id: first.id,
+            name: first.name,
+            symbol: first.symbol,
+          });
+        }
       } finally {
         setLoading(false);
       }
     }
 
     loadCoins();
-  }, [vsCurrency]); // перезавантажувати дані при зміні валюти
+  }, [vsCurrency, onCoinSelect, selectedCoinId]);
 
-  // Фільтрація списку монет за пошуковим запитом
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredCoins = coins.filter((coin) => {
@@ -120,10 +135,7 @@ function CryptoList() {
     const name = coin.name.toLowerCase();
     const symbol = coin.symbol.toLowerCase();
 
-    return (
-      name.includes(normalizedQuery) ||
-      symbol.includes(normalizedQuery)
-    );
+    return name.includes(normalizedQuery) || symbol.includes(normalizedQuery);
   });
 
   const currencyLabel = vsCurrency.toUpperCase();
@@ -135,7 +147,8 @@ function CryptoList() {
         <p>
           На цьому екрані відображається перелік основних криптовалют. Користувач може
           обрати базову валюту відображення (USD або UAH), а також виконати пошук за
-          назвою чи тикером.
+          назвою чи тикером. Клік по рядку таблиці дозволяє вибрати монету для
+          детального аналізу на графіку.
         </p>
       </div>
 
@@ -178,15 +191,11 @@ function CryptoList() {
       )}
 
       {!loading && !error && coins.length === 0 && (
-        <div className="crypto-status">
-          Дані відсутні.
-        </div>
+        <div className="crypto-status">Дані відсутні.</div>
       )}
 
       {!loading && coins.length > 0 && filteredCoins.length === 0 && (
-        <div className="crypto-status">
-          За вашим запитом нічого не знайдено.
-        </div>
+        <div className="crypto-status">За вашим запитом нічого не знайдено.</div>
       )}
 
       {!loading && filteredCoins.length > 0 && (
@@ -210,7 +219,20 @@ function CryptoList() {
               </thead>
               <tbody>
                 {filteredCoins.map((coin, index) => (
-                  <tr key={coin.id}>
+                  <tr
+                    key={coin.id}
+                    className={
+                      'crypto-row' + (coin.id === selectedCoinId ? ' crypto-row-selected' : '')
+                    }
+                    onClick={() =>
+                      onCoinSelect &&
+                      onCoinSelect({
+                        id: coin.id,
+                        name: coin.name,
+                        symbol: coin.symbol,
+                      })
+                    }
+                  >
                     <td>{index + 1}</td>
                     <td>
                       <div className="crypto-name">
