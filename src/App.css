@@ -169,3 +169,68 @@
     display: none; /* ховаємо ринкову капіталізацію на телефонах */
   }
 }
+/* Статуси завантаження / помилки */
+
+.crypto-status {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.crypto-status-loading {
+  color: #93c5fd;
+}
+
+.crypto-status-error {
+  color: #fca5a5;
+}
+/* Панель керування списком криптовалют (пошук + валюта) */
+
+.crypto-controls {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.crypto-search,
+.crypto-currency-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.crypto-search label,
+.crypto-currency-select label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.crypto-search input,
+.crypto-currency-select select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background-color: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.crypto-search input:focus,
+.crypto-currency-select select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+/* На вузьких екранах елементи керування розтягуються на всю ширину */
+@media (max-width: 600px) {
+  .crypto-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
