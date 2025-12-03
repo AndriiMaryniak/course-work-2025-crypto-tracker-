@@ -1,4 +1,3 @@
-// src/components/CryptoChart.jsx
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -13,7 +12,6 @@ import {
 } from 'chart.js';
 import { fetchCoinMarketChart } from '../services/coinGeckoApi';
 
-// Реєструємо модулі Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,96 +22,133 @@ ChartJS.register(
   Filler
 );
 
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      intersect: false,
+      mode: 'index',
+    },
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+      },
+      ticks: {
+        color: '#9ca3af',
+      },
+    },
+    y: {
+      grid: {
+        color: 'rgba(75, 85, 99, 0.6)',
+      },
+      ticks: {
+        color: '#9ca3af',
+      },
+    },
+  },
+};
+
 function CryptoChart({ coinId, coinName, currency }) {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Будуємо графік у тій же валюті, що й таблиця
-  const vsCurrency = currency || 'usd';
-
+  // ❗ Хук завжди викликається, навіть коли coinId немає
   useEffect(() => {
+    let cancelled = false;
+
+    // Якщо монета не вибрана – очищаємо стан і нічого не завантажуємо
     if (!coinId) {
       setChartData(null);
       setError(null);
-      return;
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
     }
-
-    let ignore = false;
 
     async function loadChart() {
       setLoading(true);
       setError(null);
 
       try {
-        const data = await fetchCoinMarketChart(coinId, vsCurrency, 7);
-        if (ignore) return;
+        const data = await fetchCoinMarketChart(coinId, currency);
 
-        const labels = data.prices.map(([ts]) => {
-          const d = new Date(ts);
-          return d.toLocaleDateString('uk-UA', {
+        if (cancelled) return;
+
+        const prices = data?.prices || [];
+
+        const labels = prices.map((item) => {
+          const dt = new Date(item[0]);
+          return dt.toLocaleDateString('uk-UA', {
             day: '2-digit',
             month: '2-digit',
           });
         });
 
-        const prices = data.prices.map(([, price]) => price);
+        const values = prices.map((item) => item[1]);
 
         setChartData({
           labels,
           datasets: [
             {
-              label: `Ціна ${coinName} (${vsCurrency.toUpperCase()}, останні 7 днів)`,
-              data: prices,
-              borderColor: 'rgba(59, 130, 246, 1)',
-              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              label: `${coinName} (${currency.toUpperCase()})`,
+              data: values,
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.20)',
               fill: true,
-              tension: 0.25,
-              pointRadius: 2,
+              tension: 0.3,
+              pointRadius: 0,
             },
           ],
         });
       } catch (err) {
-        if (ignore) return;
-        console.error('Помилка завантаження графіка:', err);
-
-        if (String(err.message).startsWith('429')) {
+        if (!cancelled) {
+          console.error(err);
           setError(
-            'Ліміт запитів CoinGecko перевищено (429 Too Many Requests). Спробуйте через кілька секунд.'
+            err?.message ||
+              'Сталася помилка під час завантаження графіка з CoinGecko.'
           );
-        } else {
-          setError('Не вдалося завантажити дані для графіка.');
         }
-
-        setChartData(null);
       } finally {
-        if (!ignore) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
-    // Невеликий debounce, щоб не робити запит при кожному дуже швидкому кліку
-    const timerId = setTimeout(() => {
-      loadChart();
-    }, 500);
+    loadChart();
 
     return () => {
-      ignore = true;
-      clearTimeout(timerId);
+      cancelled = true;
     };
-  }, [coinId, coinName, vsCurrency]);
+  }, [coinId, coinName, currency]);
+
+  // ⬇️ Після всіх хуків ми вже можемо умовно рендерити різний JSX
 
   if (!coinId) {
     return (
-      <div className="crypto-chart">
-        <h4>Графік зміни ціни</h4>
-        <p>Оберіть криптовалюту в таблиці, щоб побудувати графік.</p>
+      <div className="crypto-chart-inner">
+        <h3 className="card-title">Графік зміни ціни</h3>
+        <p className="crypto-status">
+          Оберіть монету в таблиці, щоб побачити графік її зміни ціни.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="crypto-chart">
-      <h4>Графік зміни ціни {coinName}</h4>
+    <div className="crypto-chart-inner">
+      <h3 className="card-title">
+        Графік зміни ціни {coinName}{' '}
+        <span className="chart-currency">({currency.toUpperCase()})</span>
+      </h3>
 
       {loading && (
         <div className="crypto-status crypto-status-loading">
@@ -126,35 +161,8 @@ function CryptoChart({ coinId, coinName, currency }) {
       )}
 
       {!loading && !error && chartData && (
-        <div className="crypto-chart-inner">
-          <Line
-            data={chartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  display: false,
-                },
-                tooltip: {
-                  intersect: false,
-                  mode: 'index',
-                },
-              },
-              scales: {
-                x: {
-                  grid: {
-                    display: false,
-                  },
-                },
-                y: {
-                  grid: {
-                    color: 'rgba(31, 41, 55, 1)',
-                  },
-                },
-              },
-            }}
-          />
+        <div className="chart-wrapper">
+          <Line data={chartData} options={chartOptions} />
         </div>
       )}
     </div>

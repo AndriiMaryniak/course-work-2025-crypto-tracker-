@@ -1,276 +1,338 @@
+/* Базові стилі */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #e5e7eb;
+}
+
 .app {
   min-height: 100vh;
+  background: radial-gradient(circle at top, #020617, #020617 55%, #000 100%);
+}
+
+/* Шапка */
+.app-header {
+  text-align: center;
+  padding: 24px 16px 8px;
+}
+
+.app-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Основний контейнер */
+.app-main {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+}
+
+/* Сітка з трьома блоками */
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* На десктопі — 3 колонки, графік трохи ширший */
+@media (min-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 1.05fr 1.6fr 1.45fr;
+    align-items: flex-start;
+  }
+}
+
+/* Картки */
+.card {
+  background: radial-gradient(circle at top left, #111827, #020617 80%);
+  border-radius: 20px;
+  padding: 20px 22px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.9);
+}
+
+.intro-card {
+  min-height: 260px;
+}
+
+.coins-card {
+  min-height: 260px;
+}
+
+.crypto-chart-card {
+  min-height: 280px;
   display: flex;
   flex-direction: column;
-  background-color: #020617; /* темний фон */
-  color: #e5e7eb; /* світлий текст */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.app-header {
-  padding: 1.5rem 1rem;
-  border-bottom: 1px solid #1f2937;
-  text-align: center;
-  background: radial-gradient(circle at top, #1e293b, #020617);
+/* На великих екранах робимо графік ще вищим */
+@media (min-width: 1024px) {
+  .crypto-chart-card {
+    min-height: 360px;
+  }
 }
 
-.app-title {
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  margin: 0 0 0.25rem 0;
+/* Заголовки карток */
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 10px;
 }
 
-.app-subtitle {
-  font-size: 0.95rem;
-  margin: 0;
+.card-subtitle {
+  font-size: 13px;
   color: #9ca3af;
+  margin: 0;
 }
 
-.app-main {
-  flex: 1;
-  padding: 1.5rem 1rem;
-  display: flex;
-  justify-content: center;
+.card-text {
+  font-size: 13px;
+  color: #cbd5f5;
+  margin: 0 0 10px;
 }
 
-.app-container {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.app-section {
-  background-color: #020617;
-  border-radius: 12px;
-  border: 1px solid #1f2937;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
-
-.app-section h2 {
-  font-size: 1.25rem;
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-.app-section p {
-  margin: 0 0 0.75rem 0;
-  line-height: 1.6;
-  color: #d1d5db;
-}
-
-.app-footer {
-  padding: 1rem;
-  border-top: 1px solid #1f2937;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #6b7280;
-  background-color: #020617;
-}
-
-/* Адаптивність для телефонів */
-@media (max-width: 600px) {
-  .app-main {
-    padding: 1rem 0.75rem;
-  }
-
-  .app-section {
-    padding: 1rem;
-  }
-
-  .app-title {
-    font-size: 1.4rem;
-  }
-}
-/* === Список криптовалют === */
+/* ---- Список криптовалют ---- */
 
 .crypto-list {
-  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.crypto-list-header h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
+.coins-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
-.crypto-list-header p {
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
+.currency-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.currency-label {
+  font-size: 12px;
   color: #9ca3af;
 }
 
+.currency-select {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  color: #e5e7eb;
+  font-size: 12px;
+  padding: 6px 28px 6px 10px;
+  outline: none;
+}
+
+.currency-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.6);
+}
+
+/* Таблиця */
 .crypto-table-wrapper {
-  overflow-x: auto;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(55, 65, 81, 0.8);
+  background: radial-gradient(circle at top, #020617, #020617 70%, #020617);
 }
 
 .crypto-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
 .crypto-table thead {
-  background-color: #020617;
+  background: linear-gradient(90deg, #020617, #020617);
 }
 
 .crypto-table th,
 .crypto-table td {
-  padding: 0.6rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #1f2937;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(31, 41, 55, 0.9);
 }
 
 .crypto-table th {
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-align: left;
+  font-weight: 500;
   color: #9ca3af;
+  font-size: 11px;
 }
 
-.crypto-table tbody tr:hover {
-  background-color: #030712;
+.crypto-table td {
+  color: #e5e7eb;
 }
 
-.crypto-name {
+/* Рядок таблиці */
+.crypto-row {
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.08s ease;
+}
+
+.crypto-row:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+/* Підсвічений (вибраний) рядок */
+.crypto-row--active {
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.85),
+    rgba(56, 189, 248, 0.6)
+  );
+}
+
+.crypto-row--active:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 1),
+    rgba(56, 189, 248, 0.8)
+  );
+}
+
+.crypto-row--active td {
+  border-bottom-color: transparent;
+}
+
+/* Комірки */
+.coin-name-cell {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 10px;
 }
 
-.crypto-name-main {
+.coin-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+}
+
+.coin-name-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.coin-name {
+  font-size: 13px;
   font-weight: 500;
 }
 
-.crypto-symbol {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  border: 1px solid #374151;
+.coin-symbol {
+  font-size: 11px;
   color: #9ca3af;
 }
 
-.crypto-change {
-  font-weight: 500;
+.text-right {
+  text-align: right;
 }
 
-.crypto-change-positive {
-  color: #22c55e;
+/* Бейдж зміни ціни */
+.change-badge {
+  display: inline-block;
+  min-width: 70px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  text-align: center;
 }
 
-.crypto-change-negative {
-  color: #ef4444;
+.change-badge--up {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
 }
 
-/* Для вузьких екранів */
-@media (max-width: 600px) {
-  .crypto-table th:nth-child(5),
-  .crypto-table td:nth-child(5) {
-    display: none; /* ховаємо ринкову капіталізацію на телефонах */
-  }
+.change-badge--down {
+  background: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
 }
-/* Статуси завантаження / помилки */
 
+/* Статуси (завантаження / помилка) */
 .crypto-status {
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
+  padding: 12px 8px;
+  font-size: 12px;
+  text-align: center;
 }
 
 .crypto-status-loading {
-  color: #93c5fd;
+  color: #facc15;
 }
 
 .crypto-status-error {
-  color: #fca5a5;
-}
-/* Панель керування списком криптовалют (пошук + валюта) */
-
-.crypto-controls {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  justify-content: space-between;
+  color: #f87171;
 }
 
-.crypto-search,
-.crypto-currency-select {
+/* Текст "Дані оновлено" */
+.last-update {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: right;
+}
+
+.last-update span {
+  color: #e5e7eb;
+}
+
+/* ---- Графік ---- */
+
+.crypto-chart-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  height: 100%;
 }
 
-.crypto-search label,
-.crypto-currency-select label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.chart-currency {
+  font-size: 12px;
   color: #9ca3af;
 }
 
-.crypto-search input,
-.crypto-currency-select select {
-  padding: 0.45rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #374151;
-  background-color: #020617;
-  color: #e5e7eb;
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.crypto-search input:focus,
-.crypto-currency-select select:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
-}
-
-/* На вузьких екранах елементи керування розтягуються на всю ширину */
-@media (max-width: 600px) {
-  .crypto-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-/* Виділення активного рядка в таблиці */
-
-.crypto-table tbody tr.crypto-row {
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-}
-
-.crypto-table tbody tr.crypto-row:hover {
-  background-color: #030712;
-}
-
-.crypto-table tbody tr.crypto-row-selected {
-  background-color: #020617;
-  box-shadow: inset 0 0 0 1px #3b82f6;
-}
-
-/* Графік криптовалюти */
-
-.crypto-chart {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #1f2937;
-}
-
-.crypto-chart h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-}
-
-.crypto-chart-inner {
+.chart-wrapper {
   position: relative;
   width: 100%;
-  height: 260px;
+  height: 230px;
+  margin-top: 10px;
 }
 
-@media (max-width: 600px) {
-  .crypto-chart-inner {
-    height: 220px;
+@media (min-width: 1024px) {
+  .chart-wrapper {
+    height: 290px;
+  }
+}
+
+/* Адаптація для вузьких екранів */
+@media (max-width: 640px) {
+  .card {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .app-main {
+    padding-inline: 10px;
+  }
+
+  .coins-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
