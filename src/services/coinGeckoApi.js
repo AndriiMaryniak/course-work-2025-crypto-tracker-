@@ -1,92 +1,54 @@
-// Базовий шлях до API CoinGecko через проксі Vite
-// (див. налаштування в vite.config.js)
-const API_BASE_URL = '/cg-api';
+const API_KEY = 'CG-K6yKBVyzrGiUF5D433b89jq9';
 
-// Простий кеш у пам’яті на 5 хвилин
-const cache = new Map();
+const API_BASE = 'https://api.coingecko.com/api/v3';
 
+/**
+ * Базовий запит до CoinGecko.
+ * Додає API-ключ як параметр &x_cg_demo_api_key=...
+ */
 async function fetchJson(path) {
-  const url = `${API_BASE_URL}${path}`;
-  const cached = cache.get(url);
+  // Невелика затримка, щоб не «спамити» API при дуже швидких кліках
+  await new Promise((res) => setTimeout(res, 400));
 
-  if (cached && Date.now() - cached.time < 5 * 60 * 1000) {
-    return cached.data;
+  let url = `${API_BASE}${path}`;
+
+  if (API_KEY && API_KEY.trim() !== '') {
+    const sep = url.includes('?') ? '&' : '?';
+    url += `${sep}x_cg_demo_api_key=${encodeURIComponent(API_KEY)}`;
   }
 
   const response = await fetch(url);
 
   if (!response.ok) {
-    if (response.status === 429) {
-      // важливо: в тексті є "429", щоб можна було розпізнавати в CryptoChart
-      throw new Error('429 Too Many Requests');
-    }
-
-    throw new Error(
-      `Помилка запиту до CoinGecko: ${response.status} ${response.statusText}`
-    );
+    // Наприклад "429 Too Many Requests"
+    throw new Error(`${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
-  cache.set(url, { data, time: Date.now() });
-  return data;
+  return await response.json();
 }
 
 /**
- * Завантажує ринкові дані про криптовалюти (для таблиці).
- *
- * vsCurrency — в якій валюті показувати курс (наприклад, 'usd', 'uah').
- * perPage — скільки монет завантажувати за один раз.
+ * Список монет для таблиці (топ-10 за капіталізацією)
  */
 export async function fetchMarketCoins(vsCurrency = 'usd', perPage = 10) {
   const path =
-    `/coins/markets` +
-    `?vs_currency=${encodeURIComponent(vsCurrency)}` +
-    `&order=market_cap_desc` +
-    `&per_page=${encodeURIComponent(perPage)}` +
-    `&page=1` +
-    `&price_change_percentage=24h`;
+    `/coins/markets?vs_currency=${encodeURIComponent(vsCurrency)}` +
+    `&order=market_cap_desc&per_page=${perPage}&page=1&price_change_percentage=24h`;
 
-  const data = await fetchJson(path);
-
-  // Нормалізуємо дані під нашу таблицю
-  return data.map((coin) => ({
-    id: coin.id,
-    name: coin.name,
-    symbol: coin.symbol.toUpperCase(),
-    priceUsd: coin.current_price,                // поточна ціна
-    change24h: coin.price_change_percentage_24h, // зміна в %
-    marketCapUsd: coin.market_cap,               // ринкова капіталізація
-  }));
+  return fetchJson(path);
 }
 
 /**
- * Завантажує історичні дані про ціну монети для побудови графіка.
- *
- * coinId     — ідентифікатор монети в CoinGecko (bitcoin, ethereum тощо)
- * vsCurrency — базова валюта (usd, uah)
- * days       — за скільки днів завантажувати (наприклад, 7, 30)
+ * Дані для графіка (історія ціни за останні N днів)
  */
-export async function fetchCoinMarketChart(coinId, vsCurrency = 'usd', days = 7) {
+export async function fetchCoinMarketChart(
+  coinId,
+  vsCurrency = 'usd',
+  days = 7
+) {
   const path =
-    `/coins/${encodeURIComponent(coinId)}/market_chart` +
-    `?vs_currency=${encodeURIComponent(vsCurrency)}` +
-    `&days=${encodeURIComponent(days)}` +
-    `&interval=daily`;
+    `/coins/${encodeURIComponent(coinId)}/market_chart?` +
+    `vs_currency=${encodeURIComponent(vsCurrency)}&days=${days}&interval=daily`;
 
-  const data = await fetchJson(path);
-
-  // data.prices — масив [timestamp, price]
-  return data.prices.map(([timestamp, price]) => {
-    const date = new Date(timestamp);
-    const label = date.toLocaleDateString('uk-UA', {
-      day: '2-digit',
-      month: '2-digit',
-    });
-
-    return {
-      time: date,
-      label,
-      price,
-    };
-  });
+  return fetchJson(path);
 }

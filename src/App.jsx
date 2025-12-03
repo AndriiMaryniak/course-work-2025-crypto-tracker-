@@ -1,49 +1,56 @@
+// src/App.jsx
 import { useState } from 'react';
 import './App.css';
-import Header from './components/Header';
-import Footer from './components/Footer';
 import CryptoList from './components/CryptoList';
 import CryptoChart from './components/CryptoChart';
 
 function App() {
+  const [currency, setCurrency] = useState('usd');
   const [selectedCoin, setSelectedCoin] = useState(null);
 
   return (
     <div className="app">
-      <Header />
+      <header className="app-header">
+        <h1>Веб-додаток для відслідковування курсу криптовалют</h1>
+        <p>Кросплатформенний трекер на базі React + Vite</p>
+      </header>
 
       <main className="app-main">
-        <div className="app-container">
-          <section className="app-section">
-            <h2>Головний екран</h2>
-            <p>
-              На цій сторінці відображається перелік основних криптовалют
-              та їхні базові ринкові показники. Користувач може виконувати
-              пошук, змінювати базову валюту відображення (USD/UAH) та
-              аналізувати детальну динаміку ціни вибраної монети на графіку.
-            </p>
-            <p>
-              Дані про ринок завантажуються з відкритого API CoinGecko.
-              У разі недоступності сервісу застосунок може працювати з
-              демонстраційними даними.
-            </p>
+        <section className="app-section">
+          <h2>Головний екран</h2>
+          <p>
+            На цій сторінці відображається перелік основних криптовалют та їхні
+            базові ринкові показники. Дані отримуються з відкритого CoinGecko API.
+          </p>
+          <p>
+            Користувач може змінювати базову валюту (USD / UAH), обирати монету
+            в таблиці та аналізувати динаміку її ціни на графіку.
+          </p>
+        </section>
 
-            <CryptoList
-              onCoinSelect={setSelectedCoin}
-              selectedCoinId={selectedCoin?.id}
-            />
+        <section className="app-section">
+          <CryptoList
+            currency={currency}
+            onCurrencyChange={setCurrency}
+            selectedCoinId={selectedCoin?.id || null}
+            onSelectCoin={setSelectedCoin}
+          />
+        </section>
 
-            {selectedCoin && (
-              <CryptoChart
-                coinId={selectedCoin.id}
-                coinName={selectedCoin.name}
-              />
-            )}
-          </section>
-        </div>
+        <section className="app-section">
+          <CryptoChart
+            coinId={selectedCoin?.id || null}
+            coinName={selectedCoin?.name || ''}
+            currency={currency}
+          />
+        </section>
       </main>
 
-      <Footer />
+      <footer className="app-footer">
+        <small>
+          © {new Date().getFullYear()} Курсовий проєкт з кросплатформенного програмування
+        </small>
+      </footer>
     </div>
   );
 }

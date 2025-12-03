@@ -1,3 +1,4 @@
+// src/components/CryptoChart.jsx
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -12,7 +13,7 @@ import {
 } from 'chart.js';
 import { fetchCoinMarketChart } from '../services/coinGeckoApi';
 
-// Реєструємо необхідні модулі Chart.js один раз
+// Реєструємо модулі Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,73 +24,96 @@ ChartJS.register(
   Filler
 );
 
-function CryptoChart({ coinId, coinName }) {
+function CryptoChart({ coinId, coinName, currency }) {
   const [chartData, setChartData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Ми будуємо графік у базовій валюті USD (для простоти)
-  const vsCurrency = 'usd';
+  // Будуємо графік у тій же валюті, що й таблиця
+  const vsCurrency = currency || 'usd';
 
   useEffect(() => {
     if (!coinId) {
       setChartData(null);
       setError(null);
-      setLoading(false);
       return;
     }
 
+    let ignore = false;
+
     async function loadChart() {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        setError(null);
+        const data = await fetchCoinMarketChart(coinId, vsCurrency, 7);
+        if (ignore) return;
 
-        const points = await fetchCoinMarketChart(coinId, vsCurrency, 7);
+        const labels = data.prices.map(([ts]) => {
+          const d = new Date(ts);
+          return d.toLocaleDateString('uk-UA', {
+            day: '2-digit',
+            month: '2-digit',
+          });
+        });
 
-        const labels = points.map((p) => p.label);
-        const data = points.map((p) => p.price);
+        const prices = data.prices.map(([, price]) => price);
 
         setChartData({
           labels,
           datasets: [
             {
-              label: `Ціна ${coinName} (USD, останні 7 днів)`,
-              data,
-              borderWidth: 2,
-              tension: 0.25,
+              label: `Ціна ${coinName} (${vsCurrency.toUpperCase()}, останні 7 днів)`,
+              data: prices,
               borderColor: 'rgba(59, 130, 246, 1)',
-              backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              pointRadius: 0,
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
               fill: true,
+              tension: 0.25,
+              pointRadius: 2,
             },
           ],
         });
       } catch (err) {
-        console.error(err);
+        if (ignore) return;
+        console.error('Помилка завантаження графіка:', err);
 
-        const msg = String(err.message || '');
-        if (msg.includes('429')) {
+        if (String(err.message).startsWith('429')) {
           setError(
-            'CoinGecko тимчасово обмежив частоту запитів (429 Too Many Requests). Спробуйте ще раз через кілька секунд.'
+            'Ліміт запитів CoinGecko перевищено (429 Too Many Requests). Спробуйте через кілька секунд.'
           );
         } else {
-          setError('Не вдалося завантажити історичні дані для графіка.');
+          setError('Не вдалося завантажити дані для графіка.');
         }
+
+        setChartData(null);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     }
 
-    loadChart();
-  }, [coinId]); // оновлюємо графік тільки при зміні вибраної монети
+    // Невеликий debounce, щоб не робити запит при кожному дуже швидкому кліку
+    const timerId = setTimeout(() => {
+      loadChart();
+    }, 500);
+
+    return () => {
+      ignore = true;
+      clearTimeout(timerId);
+    };
+  }, [coinId, coinName, vsCurrency]);
 
   if (!coinId) {
-    return null;
+    return (
+      <div className="crypto-chart">
+        <h4>Графік зміни ціни</h4>
+        <p>Оберіть криптовалюту в таблиці, щоб побудувати графік.</p>
+      </div>
+    );
   }
 
   return (
     <div className="crypto-chart">
-      <h4>Графік зміни ціни {coinName} (USD, останні 7 днів)</h4>
+      <h4>Графік зміни ціни {coinName}</h4>
 
       {loading && (
         <div className="crypto-status crypto-status-loading">
@@ -98,9 +122,7 @@ function CryptoChart({ coinId, coinName }) {
       )}
 
       {error && !loading && (
-        <div className="crypto-status crypto-status-error">
-          {error}
-        </div>
+        <div className="crypto-status crypto-status-error">{error}</div>
       )}
 
       {!loading && !error && chartData && (
@@ -123,9 +145,6 @@ function CryptoChart({ coinId, coinName }) {
                 x: {
                   grid: {
                     display: false,
-                  },
-                  ticks: {
-                    maxTicksLimit: 7,
                   },
                 },
                 y: {

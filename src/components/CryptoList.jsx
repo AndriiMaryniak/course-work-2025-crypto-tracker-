@@ -1,176 +1,78 @@
+// src/components/CryptoList.jsx
 import { useEffect, useState } from 'react';
 import { fetchMarketCoins } from '../services/coinGeckoApi';
 
-// Резервні (демонстраційні) дані на випадок, якщо API недоступне
-const FALLBACK_COINS = [
-  {
-    id: 'bitcoin',
-    name: 'Bitcoin',
-    symbol: 'BTC',
-    priceUsd: 96452.12,
-    change24h: 1.84,
-    marketCapUsd: 1200340000000,
-  },
-  {
-    id: 'ethereum',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    priceUsd: 3589.45,
-    change24h: -0.72,
-    marketCapUsd: 431120000000,
-  },
-  {
-    id: 'tether',
-    name: 'Tether',
-    symbol: 'USDT',
-    priceUsd: 1.0,
-    change24h: 0.01,
-    marketCapUsd: 112450000000,
-  },
-  {
-    id: 'solana',
-    name: 'Solana',
-    symbol: 'SOL',
-    priceUsd: 176.32,
-    change24h: 3.27,
-    marketCapUsd: 82560000000,
-  },
-  {
-    id: 'ripple',
-    name: 'XRP',
-    symbol: 'XRP',
-    priceUsd: 1.23,
-    change24h: -2.15,
-    marketCapUsd: 67500000000,
-  },
-];
-
-function formatCurrency(value, vsCurrency) {
-  if (value == null || isNaN(value)) {
-    return '-';
-  }
-
-  if (vsCurrency === 'uah') {
-    return value.toLocaleString('uk-UA', {
-      style: 'currency',
-      currency: 'UAH',
-      maximumFractionDigits: 0,
-    });
-  }
-
-  return value.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatPercent(value) {
-  if (value == null || isNaN(value)) {
-    return '-';
-  }
-
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(2)}%`;
-}
-
-function CryptoList({ onCoinSelect, selectedCoinId }) {
+function CryptoList({ currency, onCurrencyChange, selectedCoinId, onSelectCoin }) {
   const [coins, setCoins] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [usingFallback, setUsingFallback] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [vsCurrency, setVsCurrency] = useState('usd'); // 'usd' або 'uah'
-
+  // Завантаження списку монет при зміні валюти
   useEffect(() => {
-    async function loadCoins() {
-      try {
-        setLoading(true);
-        setError(null);
-        setUsingFallback(false);
+    let ignore = false;
 
-        const data = await fetchMarketCoins(vsCurrency, 10);
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchMarketCoins(currency, 10);
+        if (ignore) return;
+
         setCoins(data);
 
-        // Якщо монета ще не обрана — автоматично обираємо першу
-        if (data.length > 0 && !selectedCoinId && onCoinSelect) {
-          const first = data[0];
-          onCoinSelect({
-            id: first.id,
-            name: first.name,
-            symbol: first.symbol,
+        // Якщо монета ще не вибрана — автоматично обираємо першу
+        if (!selectedCoinId && data.length > 0) {
+          onSelectCoin({
+            id: data[0].id,
+            name: data[0].name,
           });
         }
       } catch (err) {
-        console.error(err);
+        if (ignore) return;
+        console.error('Помилка завантаження монет:', err);
 
-        setError(
-          'Не вдалося завантажити дані з CoinGecko для вибраної валюти. Показано демонстраційні дані в USD.'
-        );
-        setCoins(FALLBACK_COINS);
-        setUsingFallback(true);
-
-        if (!selectedCoinId && onCoinSelect && FALLBACK_COINS.length > 0) {
-          const first = FALLBACK_COINS[0];
-          onCoinSelect({
-            id: first.id,
-            name: first.name,
-            symbol: first.symbol,
-          });
+        if (String(err.message).startsWith('429')) {
+          setError(
+            'Ліміт запитів CoinGecko перевищено (429 Too Many Requests). Спробуйте через кілька секунд.'
+          );
+        } else {
+          setError(
+            'Не вдалося завантажити дані з CoinGecko. Перевірте інтернет або спробуйте пізніше.'
+          );
         }
+
+        // Якщо потрібно, тут можна підставити статичні демонстраційні дані
+        setCoins([]);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     }
 
-    loadCoins();
-  }, [vsCurrency, onCoinSelect, selectedCoinId]);
+    load();
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredCoins = coins.filter((coin) => {
-    if (!normalizedQuery) return true;
-
-    const name = coin.name.toLowerCase();
-    const symbol = coin.symbol.toLowerCase();
-
-    return name.includes(normalizedQuery) || symbol.includes(normalizedQuery);
-  });
-
-  const currencyLabel = vsCurrency.toUpperCase();
+    return () => {
+      ignore = true;
+    };
+  }, [currency, selectedCoinId, onSelectCoin]);
 
   return (
-    <div className="crypto-list">
+    <div className="crypto-list-block">
       <div className="crypto-list-header">
-        <h3>Список криптовалют</h3>
-        <p>
-          На цьому екрані відображається перелік основних криптовалют. Користувач може
-          обрати базову валюту відображення (USD або UAH), а також виконати пошук за
-          назвою чи тикером. Клік по рядку таблиці дозволяє вибрати монету для
-          детального аналізу на графіку.
-        </p>
-      </div>
-
-      {/* Панель керування: пошук + вибір валюти */}
-      <div className="crypto-controls">
-        <div className="crypto-search">
-          <label htmlFor="crypto-search-input">Пошук:</label>
-          <input
-            id="crypto-search-input"
-            type="text"
-            placeholder="Введіть назву або тикер (наприклад, BTC, Bitcoin)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div>
+          <h3>Список криптовалют (дані з CoinGecko)</h3>
+          <p className="crypto-list-subtitle">
+            Виберіть монету для побудови графіка. Можна змінювати базову валюту
+            відображення (USD / UAH).
+          </p>
         </div>
 
-        <div className="crypto-currency-select">
-          <label htmlFor="crypto-currency-select">Валюта:</label>
+        <div className="currency-select">
+          <label htmlFor="currency-select">Валюта:&nbsp;</label>
           <select
-            id="crypto-currency-select"
-            value={vsCurrency}
-            onChange={(e) => setVsCurrency(e.target.value)}
+            id="currency-select"
+            value={currency}
+            onChange={(e) => onCurrencyChange(e.target.value)}
           >
             <option value="usd">USD (долар США)</option>
             <option value="uah">UAH (гривня)</option>
@@ -180,7 +82,7 @@ function CryptoList({ onCoinSelect, selectedCoinId }) {
 
       {loading && (
         <div className="crypto-status crypto-status-loading">
-          Завантаження даних про криптовалюти…
+          Завантаження даних з CoinGecko…
         </div>
       )}
 
@@ -191,73 +93,61 @@ function CryptoList({ onCoinSelect, selectedCoinId }) {
       )}
 
       {!loading && !error && coins.length === 0 && (
-        <div className="crypto-status">Дані відсутні.</div>
+        <div className="crypto-status">
+          Дані відсутні. Спробуйте оновити сторінку або змінити валюту.
+        </div>
       )}
 
-      {!loading && coins.length > 0 && filteredCoins.length === 0 && (
-        <div className="crypto-status">За вашим запитом нічого не знайдено.</div>
-      )}
+      {coins.length > 0 && (
+        <div className="crypto-table-wrapper">
+          <table className="crypto-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Назва</th>
+                <th>Курс ({currency.toUpperCase()})</th>
+                <th>Зміна за 24 год</th>
+                <th>Ринкова капіталізація</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coins.map((coin, idx) => {
+                const isSelected = coin.id === selectedCoinId;
+                const change = coin.price_change_percentage_24h;
 
-      {!loading && filteredCoins.length > 0 && (
-        <>
-          {usingFallback && (
-            <div className="crypto-status">
-              Зараз відображаються статичні демо-дані в доларах США (USD).
-            </div>
-          )}
-
-          <div className="crypto-table-wrapper">
-            <table className="crypto-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Назва</th>
-                  <th>Курс ({currencyLabel})</th>
-                  <th>Зміна за 24 год</th>
-                  <th>Ринкова капіталізація</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCoins.map((coin, index) => (
+                return (
                   <tr
                     key={coin.id}
-                    className={
-                      'crypto-row' + (coin.id === selectedCoinId ? ' crypto-row-selected' : '')
-                    }
+                    className={isSelected ? 'row-selected' : ''}
                     onClick={() =>
-                      onCoinSelect &&
-                      onCoinSelect({
-                        id: coin.id,
-                        name: coin.name,
-                        symbol: coin.symbol,
-                      })
+                      onSelectCoin({ id: coin.id, name: coin.name })
                     }
                   >
-                    <td>{index + 1}</td>
-                    <td>
-                      <div className="crypto-name">
-                        <span className="crypto-name-main">{coin.name}</span>
-                        <span className="crypto-symbol">{coin.symbol}</span>
+                    <td>{idx + 1}</td>
+                    <td className="coin-name-cell">
+                      <img
+                        src={coin.image}
+                        alt={coin.name}
+                        className="coin-icon"
+                      />
+                      <div>
+                        <div>{coin.name}</div>
+                        <div className="coin-symbol">
+                          {coin.symbol.toUpperCase()}
+                        </div>
                       </div>
                     </td>
-                    <td>{formatCurrency(coin.priceUsd, vsCurrency)}</td>
-                    <td>
-                      <span
-                        className={
-                          'crypto-change ' +
-                          (coin.change24h >= 0 ? 'crypto-change-positive' : 'crypto-change-negative')
-                        }
-                      >
-                        {formatPercent(coin.change24h)}
-                      </span>
+                    <td>{coin.current_price?.toLocaleString('uk-UA')}</td>
+                    <td className={change >= 0 ? 'change-positive' : 'change-negative'}>
+                      {change?.toFixed(2)}%
                     </td>
-                    <td>{formatCurrency(coin.marketCapUsd, vsCurrency)}</td>
+                    <td>{coin.market_cap?.toLocaleString('uk-UA')}</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
