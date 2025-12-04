@@ -60,7 +60,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [currency]);
 
   const handleSelectCoin = (coin) => {
@@ -82,8 +82,14 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Веб-додаток для відслідковування курсу криптовалют</h1>
-        <p>Кросплатформенний трекер на базі React + Vite</p>
+        <div className="app-header-inner">
+          <h1 className="app-title">
+            Веб-додаток для відслідковування курсу криптовалют
+          </h1>
+          <p className="app-subtitle">
+            Кросплатформенний трекер на базі React + Vite
+          </p>
+        </div>
       </header>
 
       <main className="app-main app-layout">
