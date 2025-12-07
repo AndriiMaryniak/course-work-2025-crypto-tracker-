@@ -54,19 +54,19 @@ const chartOptions = {
   },
 };
 
-function CryptoChart({ coinId, coinName, currency }) {
+function CryptoChart({ coinId, coinName, currency, coin }) {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Період у днях – читаємо з localStorage або 7
+  // Період у днях – з localStorage або 7
   const [days, setDays] = useState(() => {
     const saved = localStorage.getItem('ct_days');
     const num = saved ? Number(saved) : 7;
     return [7, 30, 90].includes(num) ? num : 7;
   });
 
-  // Зберігаємо вибраний період у localStorage
+  // Зберігаємо вибраний період
   useEffect(() => {
     localStorage.setItem('ct_days', String(days));
   }, [days]);
@@ -151,12 +151,69 @@ function CryptoChart({ coinId, coinName, currency }) {
     );
   }
 
+  const isUSD = currency === 'usd' || currency === 'USD';
+  const symbol = isUSD ? '$' : '₴';
+  const change24h = coin?.price_change_percentage_24h ?? null;
+  const isChangePositive = change24h != null ? change24h >= 0 : null;
+
   return (
     <div className="crypto-chart-inner">
       <h3 className="card-title">
         Графік зміни ціни {coinName}{' '}
         <span className="chart-currency">({currency.toUpperCase()})</span>
       </h3>
+
+      {/* Панель короткої інформації про монету */}
+      {coin && (
+        <div className="coin-info-panel">
+          <div className="coin-info-row">
+            <span className="coin-info-label">Поточна ціна</span>
+            <span className="coin-info-value">
+              {symbol}
+              {coin.current_price?.toLocaleString('uk-UA', {
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+          <div className="coin-info-row">
+            <span className="coin-info-label">Мін / Макс за 24 год</span>
+            <span className="coin-info-value">
+              {symbol}
+              {coin.low_24h?.toLocaleString('uk-UA', {
+                maximumFractionDigits: 2,
+              })}{' '}
+              /{' '}
+              {symbol}
+              {coin.high_24h?.toLocaleString('uk-UA', {
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+          <div className="coin-info-row">
+            <span className="coin-info-label">Зміна за 24 год</span>
+            <span
+              className={
+                'coin-info-change ' +
+                (isChangePositive == null
+                  ? ''
+                  : isChangePositive
+                  ? 'coin-info-change--up'
+                  : 'coin-info-change--down')
+              }
+            >
+              {change24h != null ? `${change24h.toFixed(2)}%` : '—'}
+            </span>
+          </div>
+          {coin.market_cap_rank != null && (
+            <div className="coin-info-row">
+              <span className="coin-info-label">Ранг за капіталізацією</span>
+              <span className="coin-info-value">
+                #{coin.market_cap_rank}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Вибір періоду графіка */}
       <div className="days-select-wrapper">

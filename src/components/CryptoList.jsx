@@ -10,13 +10,16 @@ function CryptoList({
   error,
   lastUpdateText,
   onRefresh,
+  favorites,
+  onToggleFavorite,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   const isUSD = currency === 'usd' || currency === 'USD';
   const symbol = isUSD ? '$' : '₴';
 
-  // Фільтрація монет за назвою або символом
+  // Фільтрація за пошуком
   const filteredCoins = coins.filter((coin) => {
     const term = searchTerm.toLowerCase();
     const nameMatches = coin.name.toLowerCase().includes(term);
@@ -24,14 +27,28 @@ function CryptoList({
     return nameMatches || symbolMatches;
   });
 
+  // Якщо увімкнено «лише обрані» – додаткова фільтрація
+  const finalCoins = showOnlyFavorites
+    ? filteredCoins.filter((coin) => favorites.includes(coin.id))
+    : filteredCoins;
+
+  const noData = !loading && !error && finalCoins.length === 0;
+
+  let noDataText = 'Дані відсутні.';
+  if (searchTerm) {
+    noDataText = 'Монету не знайдено.';
+  } else if (showOnlyFavorites) {
+    noDataText = 'У списку обраних поки немає монет.';
+  }
+
   return (
     <div className="crypto-list">
       <div className="coins-header">
         <div>
           <h2 className="card-title">Список криптовалют (дані з CoinGecko)</h2>
           <p className="card-subtitle">
-            Виберіть монету для побудови графіка. Можна змінювати базову валюту
-            відображення (USD / UAH) та здійснювати пошук за назвою/тикером.
+            Виберіть монету для побудови графіка. Можна змінювати валюту,
+            здійснювати пошук та формувати власний список обраних монет.
           </p>
         </div>
 
@@ -48,19 +65,32 @@ function CryptoList({
         </div>
       </div>
 
-      {/* Поле пошуку монети */}
+      {/* Пошук */}
       <input
         type="text"
         className="search-input"
-        placeholder="Пошук монети (наприклад, BTC або Bitcoin)..."
+        placeholder="Пошук монети (BTC, ETH, Bitcoin, ...)"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
+
+      {/* Перемикач "лише обрані" */}
+      <div className="favorites-toggle">
+        <label>
+          <input
+            type="checkbox"
+            checked={showOnlyFavorites}
+            onChange={(e) => setShowOnlyFavorites(e.target.checked)}
+          />
+          Показувати лише обрані
+        </label>
+      </div>
 
       <div className="crypto-table-wrapper">
         <table className="crypto-table">
           <thead>
             <tr>
+              <th>★</th>
               <th>#</th>
               <th>Назва</th>
               <th>Курс ({isUSD ? 'USD' : 'UAH'})</th>
@@ -71,7 +101,7 @@ function CryptoList({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5} className="crypto-status crypto-status-loading">
+                <td colSpan={6} className="crypto-status crypto-status-loading">
                   Завантаження даних з CoinGecko…
                 </td>
               </tr>
@@ -79,28 +109,27 @@ function CryptoList({
 
             {!loading && error && (
               <tr>
-                <td colSpan={5} className="crypto-status crypto-status-error">
+                <td colSpan={6} className="crypto-status crypto-status-error">
                   {error}
                 </td>
               </tr>
             )}
 
-            {!loading && !error && filteredCoins.length === 0 && (
+            {noData && (
               <tr>
-                <td colSpan={5} className="crypto-status">
-                  {searchTerm
-                    ? 'Монету не знайдено.'
-                    : 'Дані відсутні.'}
+                <td colSpan={6} className="crypto-status">
+                  {noDataText}
                 </td>
               </tr>
             )}
 
             {!loading &&
               !error &&
-              filteredCoins.map((coin, index) => {
+              finalCoins.map((coin, index) => {
                 const isActive = coin.id === selectedCoinId;
                 const change = coin.price_change_percentage_24h ?? 0;
                 const isPositive = change >= 0;
+                const isFavorite = favorites.includes(coin.id);
 
                 return (
                   <tr
@@ -110,6 +139,28 @@ function CryptoList({
                     }
                     onClick={() => onSelectCoin(coin)}
                   >
+                    {/* Зірочка "обране" */}
+                    <td className="star-cell">
+                      <button
+                        type="button"
+                        className={
+                          'star-button' +
+                          (isFavorite ? ' star-button--active' : '')
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation(); // щоб не змінювати вибрану монету при кліку на зірку
+                          onToggleFavorite(coin.id);
+                        }}
+                        aria-label={
+                          isFavorite
+                            ? 'Видалити з обраних'
+                            : 'Додати до обраних'
+                        }
+                      >
+                        {isFavorite ? '★' : '☆'}
+                      </button>
+                    </td>
+
                     <td>{index + 1}</td>
                     <td className="coin-name-cell">
                       <img
