@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function CryptoList({
   coins,
@@ -9,10 +9,20 @@ function CryptoList({
   loading,
   error,
   lastUpdateText,
+  onRefresh,
 }) {
+  const [searchTerm, setSearchTerm] = useState('');
+
   const isUSD = currency === 'usd' || currency === 'USD';
   const symbol = isUSD ? '$' : '₴';
-  const currencyLabel = isUSD ? 'USD (долар США)' : 'UAH (гривня)';
+
+  // Фільтрація монет за назвою або символом
+  const filteredCoins = coins.filter((coin) => {
+    const term = searchTerm.toLowerCase();
+    const nameMatches = coin.name.toLowerCase().includes(term);
+    const symbolMatches = coin.symbol.toLowerCase().includes(term);
+    return nameMatches || symbolMatches;
+  });
 
   return (
     <div className="crypto-list">
@@ -21,7 +31,7 @@ function CryptoList({
           <h2 className="card-title">Список криптовалют (дані з CoinGecko)</h2>
           <p className="card-subtitle">
             Виберіть монету для побудови графіка. Можна змінювати базову валюту
-            відображення (USD / UAH).
+            відображення (USD / UAH) та здійснювати пошук за назвою/тикером.
           </p>
         </div>
 
@@ -38,6 +48,15 @@ function CryptoList({
         </div>
       </div>
 
+      {/* Поле пошуку монети */}
+      <input
+        type="text"
+        className="search-input"
+        placeholder="Пошук монети (наприклад, BTC або Bitcoin)..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
       <div className="crypto-table-wrapper">
         <table className="crypto-table">
           <thead>
@@ -52,7 +71,7 @@ function CryptoList({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan="5" className="crypto-status crypto-status-loading">
+                <td colSpan={5} className="crypto-status crypto-status-loading">
                   Завантаження даних з CoinGecko…
                 </td>
               </tr>
@@ -60,23 +79,25 @@ function CryptoList({
 
             {!loading && error && (
               <tr>
-                <td colSpan="5" className="crypto-status crypto-status-error">
+                <td colSpan={5} className="crypto-status crypto-status-error">
                   {error}
                 </td>
               </tr>
             )}
 
-            {!loading && !error && coins.length === 0 && (
+            {!loading && !error && filteredCoins.length === 0 && (
               <tr>
-                <td colSpan="5" className="crypto-status">
-                  Дані відсутні.
+                <td colSpan={5} className="crypto-status">
+                  {searchTerm
+                    ? 'Монету не знайдено.'
+                    : 'Дані відсутні.'}
                 </td>
               </tr>
             )}
 
             {!loading &&
               !error &&
-              coins.map((coin, index) => {
+              filteredCoins.map((coin, index) => {
                 const isActive = coin.id === selectedCoinId;
                 const change = coin.price_change_percentage_24h ?? 0;
                 const isPositive = change >= 0;
@@ -131,10 +152,13 @@ function CryptoList({
         </table>
       </div>
 
-      {/* Час останнього оновлення */}
+      {/* Час останнього оновлення + кнопка Оновити */}
       {!loading && lastUpdateText && (
         <div className="last-update">
           Дані оновлено: <span>{lastUpdateText}</span>
+          <button className="refresh-button" onClick={onRefresh}>
+            Оновити
+          </button>
         </div>
       )}
     </div>

@@ -59,11 +59,21 @@ function CryptoChart({ coinId, coinName, currency }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ❗ Хук завжди викликається, навіть коли coinId немає
+  // Період у днях – читаємо з localStorage або 7
+  const [days, setDays] = useState(() => {
+    const saved = localStorage.getItem('ct_days');
+    const num = saved ? Number(saved) : 7;
+    return [7, 30, 90].includes(num) ? num : 7;
+  });
+
+  // Зберігаємо вибраний період у localStorage
+  useEffect(() => {
+    localStorage.setItem('ct_days', String(days));
+  }, [days]);
+
   useEffect(() => {
     let cancelled = false;
 
-    // Якщо монета не вибрана – очищаємо стан і нічого не завантажуємо
     if (!coinId) {
       setChartData(null);
       setError(null);
@@ -78,7 +88,7 @@ function CryptoChart({ coinId, coinName, currency }) {
       setError(null);
 
       try {
-        const data = await fetchCoinMarketChart(coinId, currency);
+        const data = await fetchCoinMarketChart(coinId, currency, days);
 
         if (cancelled) return;
 
@@ -128,9 +138,7 @@ function CryptoChart({ coinId, coinName, currency }) {
     return () => {
       cancelled = true;
     };
-  }, [coinId, coinName, currency]);
-
-  // ⬇️ Після всіх хуків ми вже можемо умовно рендерити різний JSX
+  }, [coinId, coinName, currency, days]);
 
   if (!coinId) {
     return (
@@ -150,6 +158,20 @@ function CryptoChart({ coinId, coinName, currency }) {
         <span className="chart-currency">({currency.toUpperCase()})</span>
       </h3>
 
+      {/* Вибір періоду графіка */}
+      <div className="days-select-wrapper">
+        <span className="days-label">Період:</span>
+        <select
+          className="days-select"
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+        >
+          <option value={7}>7 днів</option>
+          <option value={30}>30 днів</option>
+          <option value={90}>90 днів</option>
+        </select>
+      </div>
+
       {loading && (
         <div className="crypto-status crypto-status-loading">
           Завантаження графіка…
@@ -161,7 +183,10 @@ function CryptoChart({ coinId, coinName, currency }) {
       )}
 
       {!loading && !error && chartData && (
-        <div className="chart-wrapper">
+        <div
+          className="chart-wrapper chart-fade-in"
+          key={`${coinId}-${days}-${currency}`}
+        >
           <Line data={chartData} options={chartOptions} />
         </div>
       )}

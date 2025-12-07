@@ -377,4 +377,94 @@ body {
   }
 }
 
+/* ---- Поле пошуку монети ---- */
+.search-input {
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 12px;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.6);
+}
+
+/* ---- Вибір періоду графіка ---- */
+.days-select-wrapper {
+  text-align: right;
+  margin: 4px 0 10px;
+}
+
+.days-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-right: 6px;
+}
+
+.days-select {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  border-radius: 9999px;
+  color: #e5e7eb;
+  font-size: 12px;
+  padding: 4px 20px 4px 8px;
+  outline: none;
+}
+
+.days-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.6);
+}
+
+/* ---- Кнопка "Оновити" ---- */
+.refresh-button {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  font-size: 11px;
+  margin-left: 10px;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.refresh-button:hover {
+  color: #7dd3fc;
+}
+
+/* ---- Footer ---- */
+.app-footer {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 10px 16px 24px;
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ---- Плавна поява графіка ---- */
+.chart-fade-in {
+  animation: chartFadeIn 0.45s ease-out;
+}
+
+@keyframes chartFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 

@@ -2,16 +2,29 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import CryptoList from './components/CryptoList';
 import CryptoChart from './components/CryptoChart';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import { fetchMarketCoins } from './services/coinGeckoApi';
 
 function App() {
-  const [currency, setCurrency] = useState('uah');        // базова валюта: 'usd' або 'uah'
+  // Валюта – читаємо з localStorage або беремо 'uah'
+  const [currency, setCurrency] = useState(() => {
+    const saved = localStorage.getItem('ct_currency');
+    return saved || 'uah';
+  });
+
   const [coins, setCoins] = useState([]);
   const [loadingCoins, setLoadingCoins] = useState(false);
   const [coinsError, setCoinsError] = useState(null);
 
-  const [selectedCoinId, setSelectedCoinId] = useState(null);
-  const [selectedCoinName, setSelectedCoinName] = useState('');
+  // Вибрана монета – теж відновлюємо з localStorage
+  const [selectedCoinId, setSelectedCoinId] = useState(() => {
+    return localStorage.getItem('ct_coinId') || null;
+  });
+  const [selectedCoinName, setSelectedCoinName] = useState(() => {
+    return localStorage.getItem('ct_coinName') || '';
+  });
+
   const [lastUpdate, setLastUpdate] = useState(null);
 
   // Завантаження списку монет при зміні валюти
@@ -23,21 +36,27 @@ function App() {
       setCoinsError(null);
 
       try {
-        const data = await fetchMarketCoins(currency); // currency: 'usd' або 'uah'
+        // Тепер завантажуємо топ-50 монет
+        const data = await fetchMarketCoins(currency, 50);
 
         if (cancelled) return;
 
         setCoins(data);
         setLastUpdate(new Date());
 
-        // Якщо монета ще не вибрана – беремо першу з таблиці
         if (!selectedCoinId && data.length > 0) {
+          // Якщо монета ще не вибрана – беремо першу
           setSelectedCoinId(data[0].id);
           setSelectedCoinName(data[0].name);
         } else if (selectedCoinId) {
+          // Якщо монета вже була вибрана – шукаємо її в новому списку
           const found = data.find((c) => c.id === selectedCoinId);
           if (found) {
             setSelectedCoinName(found.name);
+          } else if (data.length > 0) {
+            // Якщо старої монети немає – беремо першу
+            setSelectedCoinId(data[0].id);
+            setSelectedCoinName(data[0].name);
           }
         }
       } catch (err) {
@@ -60,8 +79,20 @@ function App() {
     return () => {
       cancelled = true;
     };
-    
+  }, [currency, selectedCoinId]);
+
+  // Зберігаємо валюту в localStorage
+  useEffect(() => {
+    localStorage.setItem('ct_currency', currency);
   }, [currency]);
+
+  // Зберігаємо вибрану монету в localStorage
+  useEffect(() => {
+    if (selectedCoinId) {
+      localStorage.setItem('ct_coinId', selectedCoinId);
+      localStorage.setItem('ct_coinName', selectedCoinName || '');
+    }
+  }, [selectedCoinId, selectedCoinName]);
 
   const handleSelectCoin = (coin) => {
     setSelectedCoinId(coin.id);
@@ -79,18 +110,37 @@ function App() {
     });
   };
 
+  // Функція ручного оновлення списку монет
+  const refreshCoins = async () => {
+    setLoadingCoins(true);
+    setCoinsError(null);
+    try {
+      const data = await fetchMarketCoins(currency, 50);
+      setCoins(data);
+      setLastUpdate(new Date());
+
+      if (selectedCoinId) {
+        const found = data.find((c) => c.id === selectedCoinId);
+        if (found) {
+          setSelectedCoinName(found.name);
+        } else if (data.length > 0) {
+          setSelectedCoinId(data[0].id);
+          setSelectedCoinName(data[0].name);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setCoinsError(
+        err?.message || 'Не вдалося оновити дані з CoinGecko.'
+      );
+    } finally {
+      setLoadingCoins(false);
+    }
+  };
+
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="app-header-inner">
-          <h1 className="app-title">
-            Веб-додаток для відслідковування курсу криптовалют
-          </h1>
-          <p className="app-subtitle">
-            Кросплатформенний трекер на базі React + Vite
-          </p>
-        </div>
-      </header>
+      <Header />
 
       <main className="app-main app-layout">
         {/* Лівий блок — опис головного екрану */}
@@ -99,12 +149,12 @@ function App() {
           <p className="card-text">
             На цій сторінці відображається перелік основних криптовалют та їхні
             базові ринкові показники. Дані отримуються з відкритого CoinGecko
-            API з використанням особистого demo-ключа.
+            API з використанням demo-ключа.
           </p>
           <p className="card-text">
             Користувач може змінювати базову валюту відображення (USD / UAH),
             обирати монету в таблиці та аналізувати динаміку її ціни на графіку
-            за останні 7 днів.
+            за різні періоди (7 / 30 / 90 днів).
           </p>
           <p className="card-text">
             Інтерфейс реалізовано як адаптивний веб-додаток, який коректно
@@ -124,6 +174,7 @@ function App() {
             loading={loadingCoins}
             error={coinsError}
             lastUpdateText={formatLastUpdate(lastUpdate)}
+            onRefresh={refreshCoins}
           />
         </section>
 
@@ -136,6 +187,8 @@ function App() {
           />
         </section>
       </main>
+
+      <Footer />
     </div>
   );
 }
