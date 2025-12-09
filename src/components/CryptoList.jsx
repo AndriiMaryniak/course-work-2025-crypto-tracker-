@@ -12,56 +12,116 @@ function CryptoList({
   onRefresh,
   favorites,
   onToggleFavorite,
+  language,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
-  const isUSD = currency === 'usd' || currency === 'USD';
+  const isUSD = currency.toLowerCase() === 'usd';
   const symbol = isUSD ? '$' : '₴';
 
-  // Фільтрація за пошуком
+  const texts = {
+    ua: {
+      title: 'Список криптовалют (дані з CoinGecko)',
+      subtitle:
+        'Виберіть монету для побудови графіка. Можна змінювати валюту, здійснювати пошук та формувати власний список обраних монет.',
+      currencyLabel: 'Валюта:',
+      searchPlaceholder: 'Пошук монети (BTC, ETH, Solana, ...)',
+      showOnlyFavorites: 'Показувати лише обрані',
+      thStar: '★',
+      thIndex: '#',
+      thName: 'Назва',
+      thPrice: 'Курс',
+      thChange: 'Зміна за 24 год',
+      thCap: 'Ринкова капіталізація',
+      loading: 'Завантаження даних з CoinGecko…',
+      noData: 'Дані відсутні.',
+      noDataSearch: 'Монету не знайдено.',
+      noFavorites: 'У списку обраних поки немає монет.',
+      lastUpdatePrefix: 'Дані оновлено:',
+    },
+    en: {
+      title: 'Cryptocurrencies list (data from CoinGecko)',
+      subtitle:
+        'Select a coin to build a chart. You can change the base currency, search and build your own list of favourite coins.',
+      currencyLabel: 'Currency:',
+      searchPlaceholder: 'Search coin (BTC, ETH, Solana, ...)',
+      showOnlyFavorites: 'Show favourites only',
+      thStar: '★',
+      thIndex: '#',
+      thName: 'Name',
+      thPrice: 'Price',
+      thChange: '24h change',
+      thCap: 'Market cap',
+      loading: 'Loading data from CoinGecko…',
+      noData: 'No data.',
+      noDataSearch: 'No coin found.',
+      noFavorites: 'There are no favourite coins yet.',
+      lastUpdatePrefix: 'Last update:',
+    },
+  };
+
+  const t = texts[language] || texts.ua;
+
+  // ---- Пошук з кількома словами ----
   const filteredCoins = coins.filter((coin) => {
-    const term = searchTerm.toLowerCase();
-    const nameMatches = coin.name.toLowerCase().includes(term);
-    const symbolMatches = coin.symbol.toLowerCase().includes(term);
-    return nameMatches || symbolMatches;
+    const raw = searchTerm.trim().toLowerCase();
+
+    if (!raw) return true;
+
+    const tokens = raw.split(/[\s,]+/).filter(Boolean);
+    if (tokens.length === 0) return true;
+
+    const name = coin.name.toLowerCase();
+    const sym = coin.symbol.toLowerCase();
+
+    return tokens.some(
+      (token) => name.includes(token) || sym.includes(token)
+    );
   });
 
   // Якщо увімкнено «лише обрані» – додаткова фільтрація
   const finalCoins = showOnlyFavorites
-    ? filteredCoins.filter((coin) => favorites.includes(coin.id))
+    ? filteredCoins.filter((coin) => (favorites || []).includes(coin.id))
     : filteredCoins;
 
   const noData = !loading && !error && finalCoins.length === 0;
 
-  let noDataText = 'Дані відсутні.';
-  if (searchTerm) {
-    noDataText = 'Монету не знайдено.';
+  let noDataText = t.noData;
+  if (searchTerm.trim()) {
+    noDataText = t.noDataSearch;
   } else if (showOnlyFavorites) {
-    noDataText = 'У списку обраних поки немає монет.';
+    noDataText = t.noFavorites;
   }
 
   return (
     <div className="crypto-list">
       <div className="coins-header">
         <div>
-          <h2 className="card-title">Список криптовалют (дані з CoinGecko)</h2>
-          <p className="card-subtitle">
-            Виберіть монету для побудови графіка. Можна змінювати валюту,
-            здійснювати пошук та формувати власний список обраних монет.
-          </p>
+          <h2 className="card-title">{t.title}</h2>
+          <p className="card-subtitle">{t.subtitle}</p>
         </div>
 
-        <div className="currency-select-wrapper">
-          <span className="currency-label">Валюта:</span>
-          <select
-            className="currency-select"
-            value={currency.toLowerCase()}
-            onChange={(e) => setCurrency(e.target.value)}
+        <div className="coins-header-right">
+          <div className="currency-select-wrapper">
+            <span className="currency-label">{t.currencyLabel}</span>
+            <select
+              className="currency-select"
+              value={currency.toLowerCase()}
+              onChange={(e) => setCurrency(e.target.value)}
+            >
+              <option value="usd">USD (долар США)</option>
+              <option value="uah">UAH (гривня)</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="refresh-button"
+            onClick={onRefresh}
           >
-            <option value="usd">USD (долар США)</option>
-            <option value="uah">UAH (гривня)</option>
-          </select>
+            {language === 'en' ? 'Refresh' : 'Оновити'}
+          </button>
         </div>
       </div>
 
@@ -69,7 +129,7 @@ function CryptoList({
       <input
         type="text"
         className="search-input"
-        placeholder="Пошук монети (BTC, ETH, Bitcoin, ...)"
+        placeholder={t.searchPlaceholder}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
@@ -82,7 +142,7 @@ function CryptoList({
             checked={showOnlyFavorites}
             onChange={(e) => setShowOnlyFavorites(e.target.checked)}
           />
-          Показувати лише обрані
+          {t.showOnlyFavorites}
         </label>
       </div>
 
@@ -90,19 +150,21 @@ function CryptoList({
         <table className="crypto-table">
           <thead>
             <tr>
-              <th>★</th>
-              <th>#</th>
-              <th>Назва</th>
-              <th>Курс ({isUSD ? 'USD' : 'UAH'})</th>
-              <th>Зміна за 24 год</th>
-              <th>Ринкова капіталізація</th>
+              <th>{t.thStar}</th>
+              <th>{t.thIndex}</th>
+              <th>{t.thName}</th>
+              <th>
+                {t.thPrice} ({isUSD ? 'USD' : 'UAH'})
+              </th>
+              <th>{t.thChange}</th>
+              <th>{t.thCap}</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
                 <td colSpan={6} className="crypto-status crypto-status-loading">
-                  Завантаження даних з CoinGecko…
+                  {t.loading}
                 </td>
               </tr>
             )}
@@ -129,7 +191,7 @@ function CryptoList({
                 const isActive = coin.id === selectedCoinId;
                 const change = coin.price_change_percentage_24h ?? 0;
                 const isPositive = change >= 0;
-                const isFavorite = favorites.includes(coin.id);
+                const isFavorite = (favorites || []).includes(coin.id);
 
                 return (
                   <tr
@@ -148,12 +210,18 @@ function CryptoList({
                           (isFavorite ? ' star-button--active' : '')
                         }
                         onClick={(e) => {
-                          e.stopPropagation(); // щоб не змінювати вибрану монету при кліку на зірку
-                          onToggleFavorite(coin.id);
+                          e.stopPropagation();
+                          if (onToggleFavorite) {
+                            onToggleFavorite(coin.id);
+                          }
                         }}
                         aria-label={
                           isFavorite
-                            ? 'Видалити з обраних'
+                            ? language === 'en'
+                              ? 'Remove from favourites'
+                              : 'Видалити з обраних'
+                            : language === 'en'
+                            ? 'Add to favourites'
                             : 'Додати до обраних'
                         }
                       >
@@ -203,13 +271,10 @@ function CryptoList({
         </table>
       </div>
 
-      {/* Час останнього оновлення + кнопка Оновити */}
+      {/* Час останнього оновлення */}
       {!loading && lastUpdateText && (
         <div className="last-update">
-          Дані оновлено: <span>{lastUpdateText}</span>
-          <button className="refresh-button" onClick={onRefresh}>
-            Оновити
-          </button>
+          {t.lastUpdatePrefix} <span>{lastUpdateText}</span>
         </div>
       )}
     </div>

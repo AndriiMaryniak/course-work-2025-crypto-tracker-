@@ -54,22 +54,48 @@ const chartOptions = {
   },
 };
 
-function CryptoChart({ coinId, coinName, currency, coin }) {
+function CryptoChart({ coinId, coinName, currency, language }) {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [days, setDays] = useState('30');
 
-  // Період у днях – з localStorage або 7
-  const [days, setDays] = useState(() => {
-    const saved = localStorage.getItem('ct_days');
-    const num = saved ? Number(saved) : 7;
-    return [7, 30, 90].includes(num) ? num : 7;
-  });
+  const texts = {
+    ua: {
+      titlePrefix: 'Графік зміни ціни',
+      noCoinTitle: 'Графік зміни ціни',
+      noCoinText:
+        'Оберіть монету в таблиці, щоб побачити графік її зміни ціни.',
+      loading: 'Завантаження графіка…',
+      error:
+        'Сталася помилка під час завантаження графіка з CoinGecko.',
+      periodLabel: 'Період:',
+      days: {
+        '1': '1 день',
+        '7': '7 днів',
+        '30': '30 днів',
+        '90': '90 днів',
+      },
+    },
+    en: {
+      titlePrefix: 'Price change chart',
+      noCoinTitle: 'Price change chart',
+      noCoinText:
+        'Select a coin in the table to see its price change chart.',
+      loading: 'Loading chart…',
+      error:
+        'An error occurred while loading chart data from CoinGecko.',
+      periodLabel: 'Period:',
+      days: {
+        '1': '1 day',
+        '7': '7 days',
+        '30': '30 days',
+        '90': '90 days',
+      },
+    },
+  };
 
-  // Зберігаємо вибраний період
-  useEffect(() => {
-    localStorage.setItem('ct_days', String(days));
-  }, [days]);
+  const t = texts[language] || texts.ua;
 
   useEffect(() => {
     let cancelled = false;
@@ -88,7 +114,11 @@ function CryptoChart({ coinId, coinName, currency, coin }) {
       setError(null);
 
       try {
-        const data = await fetchCoinMarketChart(coinId, currency, days);
+        const data = await fetchCoinMarketChart(
+          coinId,
+          currency,
+          parseInt(days, 10)
+        );
 
         if (cancelled) return;
 
@@ -96,7 +126,9 @@ function CryptoChart({ coinId, coinName, currency, coin }) {
 
         const labels = prices.map((item) => {
           const dt = new Date(item[0]);
-          return dt.toLocaleDateString('uk-UA', {
+          // формат під мову
+          const locale = language === 'en' ? 'en-GB' : 'uk-UA';
+          return dt.toLocaleDateString(locale, {
             day: '2-digit',
             month: '2-digit',
           });
@@ -122,8 +154,7 @@ function CryptoChart({ coinId, coinName, currency, coin }) {
         if (!cancelled) {
           console.error(err);
           setError(
-            err?.message ||
-              'Сталася помилка під час завантаження графіка з CoinGecko.'
+            err?.message || t.error
           );
         }
       } finally {
@@ -138,100 +169,42 @@ function CryptoChart({ coinId, coinName, currency, coin }) {
     return () => {
       cancelled = true;
     };
-  }, [coinId, coinName, currency, days]);
+  }, [coinId, coinName, currency, days, language]);
 
+  // коли монета не вибрана
   if (!coinId) {
     return (
       <div className="crypto-chart-inner">
-        <h3 className="card-title">Графік зміни ціни</h3>
-        <p className="crypto-status">
-          Оберіть монету в таблиці, щоб побачити графік її зміни ціни.
-        </p>
+        <h3 className="card-title">{t.noCoinTitle}</h3>
+        <p className="crypto-status">{t.noCoinText}</p>
       </div>
     );
   }
 
-  const isUSD = currency === 'usd' || currency === 'USD';
-  const symbol = isUSD ? '$' : '₴';
-  const change24h = coin?.price_change_percentage_24h ?? null;
-  const isChangePositive = change24h != null ? change24h >= 0 : null;
-
   return (
     <div className="crypto-chart-inner">
       <h3 className="card-title">
-        Графік зміни ціни {coinName}{' '}
+        {t.titlePrefix} {coinName}{' '}
         <span className="chart-currency">({currency.toUpperCase()})</span>
       </h3>
 
-      {/* Панель короткої інформації про монету */}
-      {coin && (
-        <div className="coin-info-panel">
-          <div className="coin-info-row">
-            <span className="coin-info-label">Поточна ціна</span>
-            <span className="coin-info-value">
-              {symbol}
-              {coin.current_price?.toLocaleString('uk-UA', {
-                maximumFractionDigits: 2,
-              })}
-            </span>
-          </div>
-          <div className="coin-info-row">
-            <span className="coin-info-label">Мін / Макс за 24 год</span>
-            <span className="coin-info-value">
-              {symbol}
-              {coin.low_24h?.toLocaleString('uk-UA', {
-                maximumFractionDigits: 2,
-              })}{' '}
-              /{' '}
-              {symbol}
-              {coin.high_24h?.toLocaleString('uk-UA', {
-                maximumFractionDigits: 2,
-              })}
-            </span>
-          </div>
-          <div className="coin-info-row">
-            <span className="coin-info-label">Зміна за 24 год</span>
-            <span
-              className={
-                'coin-info-change ' +
-                (isChangePositive == null
-                  ? ''
-                  : isChangePositive
-                  ? 'coin-info-change--up'
-                  : 'coin-info-change--down')
-              }
-            >
-              {change24h != null ? `${change24h.toFixed(2)}%` : '—'}
-            </span>
-          </div>
-          {coin.market_cap_rank != null && (
-            <div className="coin-info-row">
-              <span className="coin-info-label">Ранг за капіталізацією</span>
-              <span className="coin-info-value">
-                #{coin.market_cap_rank}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Вибір періоду графіка */}
-      <div className="days-select-wrapper">
-        <span className="days-label">Період:</span>
+      <div className="chart-toolbar">
+        <span className="period-label">{t.periodLabel}</span>
         <select
           className="days-select"
           value={days}
-          onChange={(e) => setDays(Number(e.target.value))}
+          onChange={(e) => setDays(e.target.value)}
         >
-          <option value={7}>7 днів</option>
-          <option value={30}>30 днів</option>
-          <option value={90}>90 днів</option>
+          <option value="1">{t.days['1']}</option>
+          <option value="7">{t.days['7']}</option>
+          <option value="30">{t.days['30']}</option>
+          <option value="90">{t.days['90']}</option>
         </select>
       </div>
 
       {loading && (
         <div className="crypto-status crypto-status-loading">
-          Завантаження графіка…
+          {t.loading}
         </div>
       )}
 
@@ -240,10 +213,7 @@ function CryptoChart({ coinId, coinName, currency, coin }) {
       )}
 
       {!loading && !error && chartData && (
-        <div
-          className="chart-wrapper chart-fade-in"
-          key={`${coinId}-${days}-${currency}`}
-        >
+        <div className="chart-wrapper">
           <Line data={chartData} options={chartOptions} />
         </div>
       )}
