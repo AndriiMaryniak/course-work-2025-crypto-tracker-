@@ -1,12 +1,19 @@
+// src/App.jsx
 import { useEffect, useState } from 'react';
 import './App.css';
 import CryptoList from './components/CryptoList';
 import CryptoChart from './components/CryptoChart';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import AuthPanel from './components/AuthPanel';
 import { fetchMarketCoins } from './services/coinGeckoApi';
+import {
+  fetchCurrentUser,
+  updateUserSettings,
+  syncFavorites,
+} from './services/authApi';
 
-// початкові значення з localStorage / системи
+// початкові значення (localStorage / система)
 function getInitialCurrency() {
   if (typeof window === 'undefined') return 'uah';
   const saved = window.localStorage.getItem('ct_currency');
@@ -43,11 +50,18 @@ function getInitialFavorites() {
   }
 }
 
+function getInitialAuthToken() {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem('ct_token');
+}
+
 function App() {
+  // UI-настройки
   const [currency, setCurrency] = useState(getInitialCurrency);
   const [language, setLanguage] = useState(getInitialLanguage);
   const [theme, setTheme] = useState(getInitialTheme);
 
+  // Дані монет
   const [coins, setCoins] = useState([]);
   const [loadingCoins, setLoadingCoins] = useState(false);
   const [coinsError, setCoinsError] = useState(null);
@@ -56,9 +70,14 @@ function App() {
   const [selectedCoinName, setSelectedCoinName] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  // Обране
   const [favorites, setFavorites] = useState(getInitialFavorites);
 
-  // sync currency/lang/theme/favorites з localStorage
+  // Аутентифікація
+  const [authToken, setAuthToken] = useState(getInitialAuthToken);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // ---------- sync простих налаштувань з localStorage ----------
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem('ct_currency', currency);
@@ -80,7 +99,45 @@ function App() {
     window.localStorage.setItem('ct_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // завантаження списку монет
+  // ---------- Автовхід: якщо є ct_token у localStorage ----------
+  useEffect(() => {
+    if (!authToken || currentUser) return;
+
+    (async () => {
+      try {
+        const user = await fetchCurrentUser(authToken);
+        if (!user) return;
+
+        setCurrentUser(user);
+
+        // застосовуємо налаштування з профілю
+        if (user.settings) {
+          const { language: lang, theme: th, currency: cur } = user.settings;
+          if (lang) setLanguage(lang);
+          if (th) setTheme(th);
+          if (cur) setCurrency(cur);
+        }
+
+        if (Array.isArray(user.favorites)) {
+          setFavorites(user.favorites);
+        }
+      } catch (err) {
+        console.error('Не вдалося отримати профіль користувача:', err);
+        handleLogout();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken, currentUser]);
+
+  // якщо користувач залогінений – при зміні мови/теми/валюти оновлюємо їх у БД
+  useEffect(() => {
+    if (!authToken || !currentUser) return;
+    updateUserSettings(authToken, { language, theme, currency }).catch((err) =>
+      console.error('Помилка оновлення налаштувань користувача:', err)
+    );
+  }, [language, theme, currency, authToken, currentUser]);
+
+  // ---------- завантаження списку монет ----------
   useEffect(() => {
     let cancelled = false;
 
@@ -161,14 +218,6 @@ function App() {
     setSelectedCoinName(coin.name);
   };
 
-  const toggleFavorite = (coinId) => {
-    setFavorites((prev) =>
-      prev.includes(coinId)
-        ? prev.filter((id) => id !== coinId)
-        : [...prev, coinId]
-    );
-  };
-
   const formatLastUpdate = (dt) => {
     if (!dt) return null;
     const locale = language === 'en' ? 'en-GB' : 'uk-UA';
@@ -180,6 +229,70 @@ function App() {
       minute: '2-digit',
     });
   };
+
+  // ---------- AUTH ----------
+
+  // після успішної реєстрації/логіну
+  const handleAuthSuccess = ({ token, user }) => {
+    setAuthToken(token);
+    setCurrentUser(user || null);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('ct_token', token);
+    }
+
+    if (user?.settings) {
+      const { language: lang, theme: th, currency: cur } = user.settings;
+      if (lang) setLanguage(lang);
+      if (th) setTheme(th);
+      if (cur) setCurrency(cur);
+    }
+    if (Array.isArray(user?.favorites)) {
+      setFavorites(user.favorites);
+    } else {
+      setFavorites([]);
+    }
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setCurrentUser(null);
+
+    // скидати налаштування до дефолтних
+    setLanguage('ua');
+    setTheme('dark');
+    setCurrency('uah');
+    setFavorites([]);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('ct_token');
+      window.localStorage.setItem('ct_language', 'ua');
+      window.localStorage.setItem('ct_theme', 'dark');
+      window.localStorage.setItem('ct_currency', 'uah');
+      window.localStorage.setItem('ct_favorites', JSON.stringify([]));
+    }
+  };
+
+  // ---------- FAVORITES ----------
+
+  const toggleFavorite = (coinId) => {
+    setFavorites((prev) => {
+      const exists = prev.includes(coinId);
+      const updated = exists
+        ? prev.filter((id) => id !== coinId)
+        : [...prev, coinId];
+
+      if (authToken) {
+        syncFavorites(authToken, updated).catch((err) => {
+          console.error('Помилка синхронізації favorites з backend:', err);
+        });
+      }
+
+      return updated;
+    });
+  };
+
+  // ---------- Текст для вступного блоку ----------
 
   const introTexts = {
     ua: {
@@ -213,6 +326,14 @@ function App() {
           <p className="card-text">{intro.p1}</p>
           <p className="card-text">{intro.p2}</p>
           <p className="card-text">{intro.p3}</p>
+
+          <AuthPanel
+            language={language}
+            onAuthSuccess={handleAuthSuccess}
+            onLogout={handleLogout}
+            isLoggedIn={!!authToken}
+            currentUser={currentUser}
+          />
         </section>
 
         <section className="card coins-card">

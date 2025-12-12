@@ -39,6 +39,7 @@ function CryptoList({
       noDataSearch: 'Монету не знайдено.',
       noFavorites: 'У списку обраних поки немає монет.',
       lastUpdatePrefix: 'Дані оновлено:',
+      refresh: 'Оновити',
     },
     en: {
       title: 'Cryptocurrencies list (data from CoinGecko)',
@@ -58,15 +59,15 @@ function CryptoList({
       noDataSearch: 'No coin found.',
       noFavorites: 'There are no favourite coins yet.',
       lastUpdatePrefix: 'Last update:',
+      refresh: 'Refresh',
     },
   };
 
   const t = texts[language] || texts.ua;
 
-  // ---- Пошук з кількома словами ----
+  // --- фільтрація з кількома словами ---
   const filteredCoins = coins.filter((coin) => {
     const raw = searchTerm.trim().toLowerCase();
-
     if (!raw) return true;
 
     const tokens = raw.split(/[\s,]+/).filter(Boolean);
@@ -80,9 +81,10 @@ function CryptoList({
     );
   });
 
-  // Якщо увімкнено «лише обрані» – додаткова фільтрація
+  const favIds = Array.isArray(favorites) ? favorites : [];
+
   const finalCoins = showOnlyFavorites
-    ? filteredCoins.filter((coin) => (favorites || []).includes(coin.id))
+    ? filteredCoins.filter((coin) => favIds.includes(coin.id))
     : filteredCoins;
 
   const noData = !loading && !error && finalCoins.length === 0;
@@ -120,12 +122,11 @@ function CryptoList({
             className="refresh-button"
             onClick={onRefresh}
           >
-            {language === 'en' ? 'Refresh' : 'Оновити'}
+            {t.refresh}
           </button>
         </div>
       </div>
 
-      {/* Пошук */}
       <input
         type="text"
         className="search-input"
@@ -134,7 +135,6 @@ function CryptoList({
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      {/* Перемикач "лише обрані" */}
       <div className="favorites-toggle">
         <label>
           <input
@@ -189,9 +189,9 @@ function CryptoList({
               !error &&
               finalCoins.map((coin, index) => {
                 const isActive = coin.id === selectedCoinId;
+                const isFavorite = favIds.includes(coin.id);
                 const change = coin.price_change_percentage_24h ?? 0;
                 const isPositive = change >= 0;
-                const isFavorite = (favorites || []).includes(coin.id);
 
                 return (
                   <tr
@@ -201,7 +201,6 @@ function CryptoList({
                     }
                     onClick={() => onSelectCoin(coin)}
                   >
-                    {/* Зірочка "обране" */}
                     <td className="star-cell">
                       <button
                         type="button"
@@ -271,7 +270,6 @@ function CryptoList({
         </table>
       </div>
 
-      {/* Час останнього оновлення */}
       {!loading && lastUpdateText && (
         <div className="last-update">
           {t.lastUpdatePrefix} <span>{lastUpdateText}</span>
