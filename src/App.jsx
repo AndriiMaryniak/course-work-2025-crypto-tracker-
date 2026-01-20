@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import CryptoList from './components/CryptoList';
 import CryptoChart from './components/CryptoChart';
+import CoinDetails from './components/CoinDetails'; // <-- Імпорт нового компонента
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AuthPanel from './components/AuthPanel';
-import { fetchMarketCoins } from './services/coinGeckoApi';
+// Імпорт fetchCoinDetails
+import { fetchMarketCoins, fetchCoinDetails } from './services/coinGeckoApi';
 import {
   fetchCurrentUser,
   updateUserSettings,
@@ -61,7 +63,7 @@ function App() {
   const [language, setLanguage] = useState(getInitialLanguage);
   const [theme, setTheme] = useState(getInitialTheme);
 
-  // Дані монет
+  // Дані монет (Список)
   const [coins, setCoins] = useState([]);
   const [loadingCoins, setLoadingCoins] = useState(false);
   const [coinsError, setCoinsError] = useState(null);
@@ -69,6 +71,11 @@ function App() {
   const [selectedCoinId, setSelectedCoinId] = useState(null);
   const [selectedCoinName, setSelectedCoinName] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
+
+  // --- НОВІ СТАНІ ДЛЯ ДЕТАЛЕЙ ---
+  const [coinDetails, setCoinDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
 
   // Обране
   const [favorites, setFavorites] = useState(getInitialFavorites);
@@ -182,7 +189,41 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [currency, selectedCoinId]);
+  }, [currency]);
+
+  // ---------- ЗАВАНТАЖЕННЯ ДЕТАЛЕЙ МОНЕТИ ----------
+  useEffect(() => {
+    if (!selectedCoinId) return;
+
+    let cancelled = false;
+
+    async function loadDetails() {
+      setLoadingDetails(true);
+      setDetailsError(null);
+      setCoinDetails(null); // Очищаємо старі дані перед завантаженням нових
+
+      try {
+        const data = await fetchCoinDetails(selectedCoinId);
+        if (cancelled) return;
+        setCoinDetails(data);
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setDetailsError(err?.message || 'Помилка отримання деталей');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingDetails(false);
+        }
+      }
+    }
+
+    loadDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCoinId, language]); // Перезавантажуємо при зміні монети або мови
 
   const refreshCoins = async () => {
     setLoadingCoins(true);
@@ -232,7 +273,6 @@ function App() {
 
   // ---------- AUTH ----------
 
-  // після успішної реєстрації/логіну
   const handleAuthSuccess = ({ token, user }) => {
     setAuthToken(token);
     setCurrentUser(user || null);
@@ -273,8 +313,6 @@ function App() {
     }
   };
 
-  // ---------- FAVORITES ----------
-
   const toggleFavorite = (coinId) => {
     setFavorites((prev) => {
       const exists = prev.includes(coinId);
@@ -297,15 +335,15 @@ function App() {
   const introTexts = {
     ua: {
       title: 'Головний екран',
-      p1: 'На цій сторінці відображається перелік основних криптовалют та їхні базові ринкові показники. Дані отримуються з відкритого CoinGecko API з використанням demo-ключа.',
-      p2: 'Користувач може змінювати базову валюту відображення (USD / UAH), обирати монету в таблиці та аналізувати динаміку її ціни на графіку.',
-      p3: 'Інтерфейс реалізовано як адаптивний веб-додаток, який коректно відображається на ПК, ноутбуках та смартфонах, що підкреслює кросплатформенність рішення.',
+      p1: 'На цій сторінці відображається перелік основних криптовалют та їхні базові ринкові показники. Дані отримуються з відкритого CoinGecko API.',
+      p2: 'Оберіть монету в таблиці, щоб побачити графік та детальну інформацію про проект (дата запуску, опис, посилання).',
+      p3: 'Інтерфейс повністю адаптивний для ПК та мобільних пристроїв.',
     },
     en: {
       title: 'Main screen',
-      p1: 'This screen displays a list of major cryptocurrencies and their key market indicators. Data is loaded from the public CoinGecko API using a demo key.',
-      p2: 'The user can switch the base currency (USD / UAH), select a coin in the table and analyse its price dynamics on the chart.',
-      p3: 'The UI is implemented as a responsive web application that works correctly on desktops, laptops and smartphones, which demonstrates the cross-platform nature of the solution.',
+      p1: 'This screen displays a list of major cryptocurrencies and their key market indicators. Data is loaded from the public CoinGecko API.',
+      p2: 'Select a coin in the table to see the chart and detailed project information (genesis date, description, links).',
+      p3: 'The interface is fully responsive for desktop and mobile devices.',
     },
   };
 
@@ -353,14 +391,27 @@ function App() {
           />
         </section>
 
-        <section className="card crypto-chart-card">
-          <CryptoChart
-            coinId={selectedCoinId}
-            coinName={selectedCoinName}
-            currency={currency}
-            language={language}
-          />
-        </section>
+        {/* ПРАВА КОЛОНКА: Графік + Деталі */}
+        <div className="layout-col-right">
+          <section className="card crypto-chart-card">
+            <CryptoChart
+              coinId={selectedCoinId}
+              coinName={selectedCoinName}
+              currency={currency}
+              language={language}
+            />
+          </section>
+
+          {/* Новий блок з деталями */}
+          <section className="card coin-details-card">
+            <CoinDetails
+              details={coinDetails}
+              loading={loadingDetails}
+              error={detailsError}
+              language={language}
+            />
+          </section>
+        </div>
       </main>
 
       <Footer />
