@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. База даних
+  mongo:
+    image: mongo:6.0
+    container_name: crypto_mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - crypto-network
+
+  # 2. Бекенд (Server)
+  backend:
+    build: ./server
+    container_name: crypto_backend
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - MONGODB_URI=mongodb://mongo:27017/crypto_tracker
+      - JWT_SECRET=my_secret_key_change_it_later
+    depends_on:
+      - mongo
+    networks:
+      - crypto-network
+
+  # 3. Фронтенд (Client)
+  frontend:
+    build: .
+    container_name: crypto_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - crypto-network
+
+volumes:
+  mongo_data:
+
+networks:
+  crypto-network:
+    driver: bridge

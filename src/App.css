@@ -844,117 +844,279 @@ body.light-theme .auth-button {
   color: #f97373;
 }
 
-
-/* Контейнер для правої колонки (Графік + Інформація) */
+/* Контейнер правої колонки */
 .layout-col-right {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  /* Це гарантує, що колонка займе відведений простір у Grid */
-  min-width: 0; 
+  min-width: 0; /* Важливо для grid/flex, щоб текст не розтягував контейнер */
 }
 
-/* Картка деталей */
 .coin-details-card {
   display: flex;
   flex-direction: column;
-  /* Забезпечуємо мінімальну висоту, щоб не стрибало при завантаженні */
   min-height: 200px;
+  /* Додамо трохи більше простору */
+  padding: 24px; 
 }
 
-/* Сітка для коротких даних (Дата, Алгоритм, Сайт) */
+/* Сітка для технічних даних (Дата, Алгоритм...) */
 .details-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  /* Адаптивна сітка: на телефоні 1 колонка, на більших - 2 */
+  grid-template-columns: 1fr; 
   gap: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+@media (min-width: 480px) {
+  .details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.4); /* Підкладка під параметри */
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .detail-label {
   font-size: 11px;
-  color: #9ca3af;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .detail-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: #e5e7eb;
+  color: #f3f4f6;
+  word-break: break-word; /* Щоб довгі назви не ламали верстку */
 }
 
-.detail-link {
+/* Стиль для кнопки-посилання */
+.detail-link-btn {
+  display: inline-block;
   font-size: 13px;
   color: #38bdf8;
   text-decoration: none;
-  transition: color 0.2s;
+  font-weight: 500;
+  margin-top: 2px;
 }
-
-.detail-link:hover {
-  color: #7dd3fc;
+.detail-link-btn:hover {
   text-decoration: underline;
+  color: #7dd3fc;
 }
 
-/* Блок опису */
-.detail-description-block {
+/* =========================================================
+   ФІНАЛЬНІ СТИЛІ ДЛЯ ДЕТАЛЕЙ (Замінити блок деталей в App.css)
+   ========================================================= */
+
+/* Контейнер правої колонки */
+.layout-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.coin-details-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  padding: 24px;
+  /* Додамо легку тінь всередині для об'єму */
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2); 
+}
+
+/* --- Сітка параметрів (Дата, Алгоритм) --- */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+@media (min-width: 480px) {
+  .details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+.detail-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1; /* Займає простір, що залишився */
-  min-height: 0; /* Важливо для скролу всередині flex-контейнера */
+  background: rgba(15, 23, 42, 0.6);
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.detail-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #94a3b8; /* Світло-сірий для темної теми */
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f3f4f6; /* Білий для темної теми */
+  word-break: break-word;
+}
+
+.detail-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 2px;
+}
+.detail-link-btn:hover {
+  text-decoration: underline;
+  color: #7dd3fc;
+}
+
+/* --- БЛОК ОПИСУ (Покращена типографіка) --- */
+.detail-description-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1; 
+  min-height: 0;
+}
+
+.description-container {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: rgba(2, 6, 23, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  overflow: hidden;
+}
+
+.description-container.collapsed {
+  max-height: 160px; /* Висота згорнутого блоку */
+}
+
+.description-container.expanded {
+  max-height: 1000px; /* Достатньо велике значення для розкриття */
 }
 
 .detail-description-text {
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 15px;      /* Більший шрифт для читабельності */
+  line-height: 1.8;     /* Більший міжрядковий інтервал */
   color: #cbd5f5;
-  /* Обмеження висоти та скрол для довгого тексту */
-  max-height: 300px;
-  overflow-y: auto;
-  padding-right: 8px;
+  padding: 20px;
+  
+  /* МАГІЯ ДЛЯ АБЗАЦІВ: */
+  /* Це змушує браузер враховувати відступи з API */
+  white-space: pre-line; 
+  text-align: justify; /* Вирівнювання по ширині (виглядає як у книзі) */
 }
 
-/* Стилізація скролбару (щоб був тонкий і гарний) */
-.detail-description-text::-webkit-scrollbar {
-  width: 5px;
+/* Додаткові відступи для абзаців HTML */
+.detail-description-text p {
+  margin-bottom: 16px;
 }
 
-.detail-description-text::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-  border-radius: 4px;
+.description-fade-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(2, 6, 23, 1));
+  pointer-events: none;
 }
 
-.detail-description-text::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.3);
-  border-radius: 4px;
-}
-
-.detail-description-text::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
-}
-
-/* Посилання всередині тексту опису */
-.detail-description-text a {
+.read-more-btn {
+  align-self: center; /* Кнопка по центру */
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 20px;
   color: #38bdf8;
-  text-decoration: none;
-}
-.detail-description-text a:hover {
-  text-decoration: underline;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  margin-top: 4px;
 }
 
-/* Адаптація для світлої теми */
-body.light-theme .detail-value {
-  color: #111827;
+.read-more-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #e0f2fe;
 }
+
+/* =========================================
+   ВИПРАВЛЕННЯ ДЛЯ СВІТЛОЇ ТЕМИ (Light Theme)
+   ========================================= */
+
+body.light-theme .coin-details-card {
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03); 
+}
+
+body.light-theme .detail-item {
+  background: #ffffff;
+  border-color: rgba(209, 213, 219, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Легка тінь для карток */
+}
+
+/* Текст заголовків (Дата, Алгоритм) - робимо темним! */
+body.light-theme .detail-label {
+  color: #334155 !important; /* Темно-сірий, майже чорний */
+  font-weight: 800;
+}
+
+/* Текст значень - чорний */
+body.light-theme .detail-value {
+  color: #0f172a !important;
+}
+
+body.light-theme .description-container {
+  background: #ffffff;
+  border-color: rgba(209, 213, 219, 1);
+}
+
 body.light-theme .detail-description-text {
-  color: #4b5563;
+  color: #334155; /* Темно-сірий текст опису */
+}
+
+body.light-theme .description-fade-overlay {
+  /* Градієнт у білий */
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+}
+
+body.light-theme .read-more-btn {
+  background: rgba(2, 132, 199, 0.05);
+  border-color: rgba(2, 132, 199, 0.3);
+  color: #0284c7;
+}
+body.light-theme .read-more-btn:hover {
+  background: rgba(2, 132, 199, 0.1);
 }
