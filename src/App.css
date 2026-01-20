@@ -843,3 +843,118 @@ body.light-theme .auth-button {
   font-size: 11px;
   color: #f97373;
 }
+
+
+/* Контейнер для правої колонки (Графік + Інформація) */
+.layout-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  /* Це гарантує, що колонка займе відведений простір у Grid */
+  min-width: 0; 
+}
+
+/* Картка деталей */
+.coin-details-card {
+  display: flex;
+  flex-direction: column;
+  /* Забезпечуємо мінімальну висоту, щоб не стрибало при завантаженні */
+  min-height: 200px;
+}
+
+/* Сітка для коротких даних (Дата, Алгоритм, Сайт) */
+.details-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.detail-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.detail-link {
+  font-size: 13px;
+  color: #38bdf8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.detail-link:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+/* Блок опису */
+.detail-description-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1; /* Займає простір, що залишився */
+  min-height: 0; /* Важливо для скролу всередині flex-контейнера */
+}
+
+.detail-description-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd5f5;
+  /* Обмеження висоти та скрол для довгого тексту */
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Стилізація скролбару (щоб був тонкий і гарний) */
+.detail-description-text::-webkit-scrollbar {
+  width: 5px;
+}
+
+.detail-description-text::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+.detail-description-text::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+}
+
+.detail-description-text::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+/* Посилання всередині тексту опису */
+.detail-description-text a {
+  color: #38bdf8;
+  text-decoration: none;
+}
+.detail-description-text a:hover {
+  text-decoration: underline;
+}
+
+/* Адаптація для світлої теми */
+body.light-theme .detail-value {
+  color: #111827;
+}
+body.light-theme .detail-description-text {
+  color: #4b5563;
+}
