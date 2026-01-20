@@ -52,3 +52,15 @@ export async function fetchCoinMarketChart(
 
   return fetchJson(path);
 }
+
+/**
+ * НОВЕ: Детальна інформація про монету (Опис, дата запуску, посилання)
+ */
+export async function fetchCoinDetails(coinId) {
+  // localization=true дозволяє отримати опис різними мовами (в т.ч. uk)
+  const path = `/coins/${encodeURIComponent(
+    coinId
+  )}?localization=true&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false`;
+
+  return fetchJson(path);
+}
